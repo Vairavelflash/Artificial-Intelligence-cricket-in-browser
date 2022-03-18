@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    
+    <title>Home-Cricket</title>
+    <style>/* Style the header with a grey background and some padding */
+     * {
+  box-sizing: border-box;
+}
+
+.flex-container {
+  display: flex;
+  flex-direction: row;
+  font-size: 30px;
+  text-align: center;
+}
+
+.flex-item-left {
+  background-color: #f1f1f1;
+  padding: 10px;
+  flex: 50%;
+}
+.flex-item-center {
+  background-color: #f1f1f1;
+  padding: 10px;
+  flex: 50%;
+}
+
+.flex-item-right {
+  background-color: dodgerblue;
+  padding: 10px;
+  flex: 50%;
+}
+#container{
+ 
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  /* bring your own prefixes */
+  transform: translate(-50%, -50%);
+
+}
+#label-container{
+  position: fixed;
+  /* top: 50%;
+  left: 50%; */
+  /* bring your own prefixes */
+ 
+  font-size: 2.5em;
+  font-style: oblique;
+  font-family:Arial, Helvetica, sans-serif;
+}
+/* Responsive layout - makes a one column-layout instead of two-column layout */
+@media (max-width: 800px) {
+  .flex-container {
+    flex-direction: column;
+  }
+}
+ 
+      </style>
+  </head>
+  <body>
+
+    <div class="flex-container">
+      <div class="flex-item-left">Index</div>
+      <div class="flex-item-center"><button type="button" onclick="init()">Start</button></div>
+      <div class="flex-item-right"><div id='score'></div></div>
+    </div>
+    
+    <div id="container"><canvas id="canvas"></canvas></div>
+    <div id="label-container"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/pose@0.8/dist/teachablemachine-pose.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/p5@1.4.0/lib/p5.js"></script> -->
+    <!-- <script src="sketch.js"></script> -->
+    <script type="text/javascript">
+        // More API functions here:
+        // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/pose
+    
+        // the link to your model provided by Teachable Machine export panel
+        const URL = "./my_model/";
+        let model, webcam, ctx, ctx2,labelContainer, maxPredictions;
+        let x, y,xtem,ytem,score =0;
+let value;
+
+        async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+            
+    
+            // load the model and metadata
+            // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
+            // Note: the pose library adds a tmPose object to your window (window.tmPose)
+            model = await tmPose.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+  
+            // Convenience function to setup a webcam
+            const size = 500;
+            const flip = true; // whether to flip the webcam
+            webcam = new tmPose.Webcam(size, size, flip); // width, height, flip
+            await webcam.setup(); // request access to the webcam
+            await webcam.play();
+            window.requestAnimationFrame(loop);
+    
+            // append/get elements to the DOM
+            const canvas = document.getElementById("canvas");
+    
+            canvas.width = size; canvas.height = size;
+            ctx = canvas.getContext("2d");
+            ctx2 = canvas.getContext("2d");
+
+            x = canvas.width / 2;
+            y = canvas.height;
+            xtem = x;
+            ytem=y;
+            labelContainer = document.getElementById("label-container");
+ 
+            for (let i = 0; i < maxPredictions; i++) { // and class labels
+                labelContainer.appendChild(document.createElement("div"));
+            }
+        }
+    
+        async function loop(timestamp) {
+             webcam.update(); // update the webcam frame
+            await predict();
+            window.requestAnimationFrame(loop);
+       
+        }
+  
+        async function predict() {
+            // Prediction #1: run input through posenet
+            // estimatePose can take in an image, video or canvas html element
+            const { pose, posenetOutput } = await model.estimatePose(webcam.canvas);
+            // Prediction 2: run input through teachable machine classification model
+            const prediction = await model.predict(posenetOutput);
+    
+        let b = [];
+            for (let i = 0; i < maxPredictions; i++) {
+                const classPrediction =
+                    prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+                                                
+                    if(i<maxPredictions){
+                    
+                       b.push(classPrediction);
+                      //  console.log(b);
+                        }
+                
+                    if(b.length == 12){
+                         // console.log(b);
+                        displayHello(b);
+                        
+                        b=[];
+                     }
+            }
+   
+            // finally draw the poses
+            drawPose(pose);
+        }
+
+        let a =[];  
+
+function displayHello(predictiondata) {
+
+  a.push(predictiondata);
+//  console.log(a.length)
+if(a.length == 63){
+  console.log('won')
+  a=[];
+}
+  if(a.length == 50){
+    
+      const finaldata = a[a.length-1];
+      
+    let d0= {STRAIGHT_DRIVE:finaldata[0].slice(-4)}
+     let d1= {SQUARE_DRIVE:finaldata[1].slice(-4)}
+     let d2= {FORWARD_DEFENCE:finaldata[2].slice(-4)}
+     let d3= {SWEEP:finaldata[3].slice(-4)}
+     let d4= {REVERSE_SWEEP:finaldata[4].slice(-4)}
+     let d5= {SQUARE_CUT:finaldata[5].slice(-4)}
+     let d6= {PULL_SHOT:finaldata[6].slice(-4)}
+     let d7={UPPER_CUT: finaldata[7].slice(-4)}
+     let d8= {SIX:finaldata[8].slice(-4)}
+     let d9={SWEEP_SIX: finaldata[9].slice(-4)}
+     let d10= {EMPTY:finaldata[10].slice(-4)}
+     let d11= {RANDOM:finaldata[11].slice(-4)};
+
+     const main_arr = Object.assign(d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,d11);
+     const values = Object.values(main_arr);
+
+
+const max = Math.max(...values);
+function getKeyByValue(main_arr, value) {
+  return Object.keys(main_arr).find(key => main_arr[key] == value);
+}
+console.log(getKeyByValue(main_arr,max));
+
+      value= getKeyByValue(main_arr,max)
+ 
+      // a=[];
+      // console.log(a.length);
+  }
+  else if(a.length > 35){
+    labelContainer.innerHTML = 'HIT';
+  }
+ 
+  else{
+    labelContainer.innerHTML = 'Ready';
+    value = 'BALL';
+  }
+}
+     
+            function drawPose(pose) {
+            if (webcam.canvas) {
+                ctx.drawImage(webcam.canvas, 0, 0);
+ 
+ctx.beginPath();
+ctx2.arc(x, y, 12, 0, 2 * Math.PI);
+
+ctx2.fillStyle = 'white'
+  ctx2.fill();
+  // y=y-2;
+  if (y < 0) {
+    y = ytem;
+    x= xtem;
+    
+  }
+  else if (y > 500) {
+    y = ytem;
+    x= xtem;
+
+    
+  }
+  else if(x<0){
+    y = ytem;
+    x= xtem;
+  }
+  else if(x>500){
+    y = ytem;
+    x= xtem;
+  }
+  // else{
+  //   console.log('1')
+  // }
+
+// After shot
+if(value == 'SWEEP_SIX'){
+   // move 1st quadrant
+   y = y - 20;
+  x=x+20;
+  score =score+6;
+  }
+  else if(value == 'PULL_SHOT'){
+  // move 1st quadrant
+  y = y - 20;
+  x=x+20;
+  score =score+2;
+  }
+  else if(value == 'SIX'){
+ // move 3rd quadrant
+ y = y + 20;
+  x=x-20;
+  score =score+6;
+  }
+
+  else if(value =='SQUARE_CUT'){
+  // move -x axis
+  
+  x=x-20;
+  score =score+3;
+  }
+
+else if(value == 'STRAIGHT_DRIVE'){
+ // move 3rd quadrant
+ y = y + 20;
+  x=x-20;
+  score =score+2;
+}
+else if(value == 'SQUARE_DRIVE'){
+// move 4th quadrant?
+y = y + 20;
+  x=x+20;
+  score = score+4;
+
+}
+
+else if(value == 'FORWARD DEFENCE'){
+ // move on x line
+ y=y+20;
+//  score = score+1;
+score =score+1;
+
+}
+else if(value == 'SWEEP'){
+  //move 2nd quadrant
+  y = y-20;
+  x=x-20;
+  // score = score+1;
+  score =score+4;
+
+}
+else if(value == 'REVERSE_SWEEP' ){
+  // move 1st quadrant
+  y = y - 20;
+  x=x+20;
+  score =score+6;
+}
+else if(value == 'UPPER_CUT' ){
+   // move 1st quadrant
+   y = y - 20;
+  x=x+20;
+  score =score+4;
+}
+else if(value == 'EMPTY' ){
+  //move on y axis
+  y = y-20;
+  score =score+0;
+}
+else if(value == 'RANDOM' ){
+  //move on y axis
+  y = y-20;
+  score =score+0;
+}
+else if(value == 'BALL' ){
+  y = y-5;
+  
+}
+else{
+  console.log('No run...')
+}
+document.getElementById("score")
+  .innerHTML = '<div><span>SCORE:</span>'+ Math.trunc(score/13) +'</div>' 
+                // draw the keypoints and skeleton
+                if (pose) {
+                    const minPartConfidence = 0.5;
+                    tmPose.drawKeypoints(pose.keypoints, minPartConfidence, ctx);
+                    tmPose.drawSkeleton(pose.keypoints, minPartConfidence, ctx);
+                }
+            }
+        }
+    </script>
+  </body>
+</html>
