@@ -1,4 +1,5 @@
 Play Cricket game using pose detection in browser.
+play online - https://chw4k.sse.codesandbox.io/
 Use only chrome and firefox for best use.
 **Works only in desktop and laptop screen
 
